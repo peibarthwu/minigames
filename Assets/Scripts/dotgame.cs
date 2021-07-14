@@ -10,7 +10,12 @@ public class dotgame : MonoBehaviour
 
     private LineRenderer lr;
     private GameObject[] sphereObjects = new GameObject[9];
-    private Transform[] points;
+    
+    private List<Vector3> userPoints = new List<Vector3>();
+    private List<Vector3> points = new List<Vector3>();
+
+    // private Vector3[] points;
+    // private Vector3[] userPoints;
 
     private Vector3 firstPoint;
     private Vector3 secondPoint;
@@ -39,28 +44,23 @@ public class dotgame : MonoBehaviour
             }    
     }
 
-    void setStart(Vector3 p)
-    {
-
-    }
-
-    void setEnd(Vector3 p)
-    {
-        
-    }
-
     void DrawLine(Vector3 start, Vector3 end)
     {
-        // Debug.DrawLine (start, end, Color.red);
-        // GameObject myLine = new GameObject();
-        // myLine.transform.position = start;
-        // myLine.AddComponent<LineRenderer>();
-        // LineRenderer lr = myLine.GetComponent<LineRenderer>();
+        lr = (new GameObject("line")).AddComponent<LineRenderer>();
+        
         // lr.material = new Material(Shader.Find("Particles/Alpha Blended Premultiply"));
-        // lr.SetWidth(0.1f, 0.1f);
-        // lr.SetPosition(0, start);
-        // lr.SetPosition(1, end);
-        Debug.Log("hit");
+        lr.SetWidth(0.5f, 0.5f);
+        lr.SetPosition(0, start);
+        lr.SetPosition(1, end);
+
+        userPoints.Add(firstPoint);
+
+        firstPoint = secondPoint;
+
+        if(userPoints.Count == (points.Count - 1)){
+            
+            CheckWin();
+        }
     }
 
     // // Change Color of the orbs
@@ -69,19 +69,43 @@ public class dotgame : MonoBehaviour
         for (int i = 0; i < difficulty; i++)
         {
             var chosen = sphereObjects[Random.Range(0,sphereObjects.Length - 1)];
+            points.Add(chosen.transform.position);
+
             //Get the Renderer component for sphere
             var renderer = chosen.GetComponent<Renderer>();
             renderer.material = chosenMat;
         
-            yield return new WaitForSeconds(0.7f);
+            yield return new WaitForSeconds(1f);
 
             renderer.material= orbMat;
         }
+    }
 
-            
-       
-        
-     }
+    void CheckWin()
+    {   
+        //add final user selected point
+        userPoints.Add(firstPoint);
+        if (userPoints.Count != points.Count)
+        {
+            FindObjectOfType<gamemanager>().Lose();
+            Debug.Log("Loss");
+        }
+        else
+        {
+            for (int i = 0; i < points.Count; i++)
+            {
+                if (userPoints[i] != points[i])
+                {
+                    Debug.Log("Loss");
+                    FindObjectOfType<gamemanager>().Lose();
+                    return;
+                }   
+            }
+            Debug.Log("Win");
+            FindObjectOfType<gamemanager>().Win();
+            return;
+        }
+    }
 
     // Start is called before the first frame update
     void Start()
@@ -98,14 +122,13 @@ public class dotgame : MonoBehaviour
                 Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition); 
                 if ( Physics.Raycast (ray,out hit,100.0f)) 
                 {
-                    Debug.Log("You selected the " + hit.transform.name); // ensure you picked right object
+                    // Debug.Log("You selected the " + hit.transform.name); // ensure you picked right object
                     if(check == 0){
-                        firstPoint = hit.point;
+                        firstPoint = hit.transform.position;
                         check = 1;
                     }else{
-                        secondPoint = hit.point;
+                        secondPoint = hit.transform.position;
                         DrawLine(firstPoint, secondPoint);
-                        check = 0;
                     }
                 }
          }
